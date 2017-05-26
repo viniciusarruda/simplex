@@ -11,7 +11,8 @@ def __simplex(file_name):
 
 	tableau,A = read_file.file_to_tableau(file_name)
 
-	tableau = simplex_first_phase.solve(tableau,A)
+	if A is not None:
+		tableau = simplex_first_phase.solve(tableau,A)
 
 	simplex_second_phase.solve(tableau)
 

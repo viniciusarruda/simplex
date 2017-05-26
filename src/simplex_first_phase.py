@@ -24,11 +24,12 @@ def solve(tableau,A):
 
 def __truncate_tableau(tableau, A):
 
+	# assumindo que as artificiais sempre ficaram no final !!
+
 	tableau = tableau[1:]
 
 	for i in xrange(0, len(tableau)):
-		for ii,j in A:
-			del tableau[i][ii]
+		del tableau[i][-len(A):]
 
 	return tableau
 
