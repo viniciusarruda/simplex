@@ -1,34 +1,54 @@
 import csv
 import sys
 
-def solve(tableau):
+def solve(tableau,A):
+
+	__show(tableau)
+
+	tableau = __zeros_artificial(tableau, A)
 
 	__show(tableau)
 
 	while not __satisfy_stop_condition(tableau):
 
 	  	max_non_basic = __get_max_non_basic(tableau)
+	  	print max_non_basic
 		min_basic, index_min_basic = __get_min_basic(tableau, max_non_basic)
+		print min_basic, index_min_basic
 		tableau = __change_base(tableau, max_non_basic, index_min_basic) # ver se ja nao atualiza sem ter que retornar.. acho que ja atualiza 
 
 		__show(tableau)
+
+	return __truncate_tableau(tableau, A)
+
+
+def __truncate_tableau(tableau, A):
+
+	tableau = tableau[1:]
+
+	for i in xrange(0, len(tableau)):
+		for ii,j in A:
+			del tableau[i][ii]
+
+	return tableau
 
 
 def __show(tableau):
 
 	def __print_formated(l):
 		for e in l:
-			sys.stdout.write('|{0:>7}'.format(('{0:.3f}'.format(e) if type(e) == float else e)))
+			sys.stdout.write('|{0:>7}'.format('{0:.3f}'.format(e) if type(e) == float else e))
 		sys.stdout.write('|\n')
 
 	print '\n'
 
 	__print_formated(['','LD'] + ['x'+str(x-1) for x in range(2, len(tableau[0]))])
 	__print_formated(tableau[0])
+	__print_formated(tableau[1])
 
 	x_asterisc = []
 
-	for i in xrange(1, len(tableau)):
+	for i in xrange(2, len(tableau)):
 		__print_formated(['x'+str(tableau[i][0]-1)] + tableau[i][1:])
 		x_asterisc.append((tableau[i][0]-2, tableau[i][1]))
 
@@ -36,7 +56,7 @@ def __show(tableau):
 	for e in x_asterisc: 
 		l[e[0]] = e[1]
 
-	sys.stdout.write('z* = ' + '{0:.3f}'.format(tableau[0][1]) + ' x* = (' + ' '.join('{0:.3f}'.format(ll) for ll in l) + ')\n')
+	sys.stdout.write('za* = ' + '{0:.3f}'.format(tableau[0][1]) + ' z* = ' + '{0:.3f}'.format(tableau[1][1]) + ' x* = (' + ' '.join('{0:.3f}'.format(ll) for ll in l) + ')\n')
 
 	sys.stdout.flush()
 
@@ -45,7 +65,7 @@ def __show(tableau):
 		writer.writerow([''] * len(tableau[0]))
 		writer.writerow(['','LD'] + ['x'+str(x-1) for x in range(2, len(tableau[0]))])
 		writer.writerow(tableau[0])
-		for i in xrange(1, len(tableau)):
+		for i in xrange(2, len(tableau)):
 			writer.writerow(['x'+str(tableau[i][0])] + tableau[i][1:])
 
 
@@ -71,12 +91,20 @@ def __change_base(tableau, max_non_basic, index_min_basic):
 	return tableau
 
 
+def __zeros_artificial(tableau, A):
+
+	for i,j in A:
+		tableau[0][1:] = [a+b for a, b in zip(tableau[0][1:], tableau[j][1:])]
+
+	return tableau 
+
+
 def __get_max_non_basic(tableau):
 
 	# J non_basic
 	# I basic
 
-	I = [row[0] for row in tableau[1:]]
+	I = [row[0] for row in tableau[2:]]
 	J = [x for x in range(2, len(tableau[0])) if x not in I]
 
 	index = J[0]
@@ -93,7 +121,7 @@ def __get_max_non_basic(tableau):
 def __get_min_basic(tableau, j):
 
 	l = []
-	for i in xrange(1, len(tableau)):
+	for i in xrange(2, len(tableau)):
 		if tableau[i][j] > 0:
 			l.append((tableau[i][0], tableau[i][1]/tableau[i][j], i))
 
