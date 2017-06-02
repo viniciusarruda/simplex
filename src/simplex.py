@@ -1,20 +1,51 @@
+# -*- coding: utf-8 -*-
 
 
-import sys
+class Simplex:
 
-import read_file
-import simplex_first_phase
-import simplex_second_phase
+    def __init__(self, tableau):
+        self.tableau = tableau
+        self.answer = None
 
+    def run(self):
 
-def __simplex(file_name):
+        if self.tableau.option == 1:
+            self.__second_phase()
+        else:
+            self.__first_phase()
 
-	tableau,A = read_file.file_to_tableau(file_name)
+        self.tableau.show(answer=self.answer)
 
-	if A is not None:
-		tableau = simplex_first_phase.solve(tableau,A)
+    def __first_phase(self):
 
-	simplex_second_phase.solve(tableau)
+        while not self.tableau.is_solution():
+            i, j = self.tableau.get_pivot()
+            self.tableau.change_base(i, j)
 
-if __name__ == "__main__":
-    __simplex(sys.argv[1])
+        if self.tableau.is_M_empty():
+            self.answer = "Não há solução, pois o conjunto de soluções viáveis é vazio"
+        else:
+            self.tableau.remove_artificial()
+            self.__second_phase()
+
+    def __second_phase(self):
+
+        if self.tableau.goes_to_minus_inf():
+            self.answer = "Não há solução, pois z tende a infinito negativo"
+            return
+
+        while not self.tableau.is_solution():
+            i, j = self.tableau.get_pivot()
+            self.tableau.change_base(i, j)
+
+            if self.tableau.goes_to_minus_inf():
+                self.answer = "Não há solução, pois z tende a infinito negativo"
+                return
+
+        if self.tableau.is_degenerate():
+            self.answer = "Solução degenerada"
+
+        if self.tableau.has_multiple_solutions():
+            self.answer = "Solução múltipla"
+        else:
+            self.answer = "Solução única"
