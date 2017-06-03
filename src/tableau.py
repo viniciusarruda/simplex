@@ -214,10 +214,11 @@ class Tableau:
 
         for j in self.J:
             inf = True
-            for row in self.tableau[1:]: # just checked in option 1 (second phase)
-                if row[j] > 0.0:
-                    inf = False
-                    break
-            if inf is True:  # -infinito
-                return True
+            if self.tableau[0][j] > 0.0:  # apenas se for candidata a entrar na base !
+                for row in self.tableau[1:]: # just checked in option 1 (second phase)
+                    if row[j] > 0.0:
+                        inf = False
+                        break
+                if inf is True:  # -infinito
+                    return True
         return False
