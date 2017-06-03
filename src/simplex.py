@@ -42,10 +42,11 @@ class Simplex:
                 self.answer = "Não há solução, pois z tende a infinito negativo"
                 return
 
+        tmp = ""
         if self.tableau.is_degenerate():
-            self.answer = "Solução degenerada"
+            tmp = " e degenerada"
 
         if self.tableau.has_multiple_solutions():
-            self.answer = "Solução múltipla"
+            self.answer = "Solução múltipla" + tmp
         else:
-            self.answer = "Solução única"
+            self.answer = "Solução única" + tmp

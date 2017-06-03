@@ -15,6 +15,7 @@ class Tableau:
 
 
     def show(self, out=None, inn=None, answer=None, custom=None):
+
         if answer is not None:
             tableau_info = "Tableau Final: " + answer
             final_space = "\n\n"
@@ -32,28 +33,29 @@ class Tableau:
 
     def __str__(self):
 
-        def __format(llist):
-            return '|' + '|'.join(['{0:>7}'.format('{0:.3f}'.format(e) if type(e) == float else e) for e in llist]) + '|\n'
-
-        separator1 = '+' + '+'.join(['~' * 7 for _ in xrange(0, len(self.tableau[0]) + 1)]) + '+'
-
-        sets = "I: " + str(self.I) + "     J: " + str(self.J)
         header = ['z'] + ['x' + str(i) for i in self.I]
+        sets = "I: " + str(self.I) + "     J: " + str(self.J)
         z = 'z* = ' + '{0:.3f}'.format(self.tableau[self.option - 1][0])
 
         if self.option == 2:
-            sets += "     A: " + str(self.A)
             header = ['za'] + header
+            sets += "     A: " + str(self.A)
             z = 'za* = ' + '{0:.3f}'.format(self.tableau[0][0]) + "\n" + z
 
         solution = [0.0] * (len(self.tableau[0]) - 1)
         for i in xrange(0, len(self.I)):
             solution[self.I[i] - 1] = self.tableau[i + self.option][0]
 
-        return separator1 + "\n" + \
-               __format(['', 'b'] + ['x' + str(x) for x in xrange(1, len(self.tableau[0]))]) + \
-               ''.join([__format([header[i]] + self.tableau[i]) for i in xrange(0, len(self.tableau))]) + \
-               separator1 + \
+        tmp = [['', 'b'] + ['x' + str(x) for x in xrange(1, len(self.tableau[0]))]]
+        tmp += [[header[i]] + ['{0:.3f}'.format(x) for x in self.tableau[i]] for i in xrange(0, len(self.tableau))]
+
+        shift = max([len(e) for row in tmp for e in row])
+
+        separator = '+' + '+'.join(['~' * shift for _ in xrange(0, len(self.tableau[0]) + 1)]) + '+'
+
+        return separator + "\n" + \
+               ''.join(['|' + '|'.join('{0:>{shift}}'.format(x, shift=shift) for x in row) + '|\n' for row in tmp]) + \
+               separator + \
                "\n" + sets + "\n" + z + '\nx* = (' + ', '.join(['{0:.3f}'.format(s) for s in solution]) + ')'
 
 
@@ -67,11 +69,11 @@ class Tableau:
             if self.option != 1 and self.option != 2:
                 raise ValueError(not_in_format_msg)
 
-            rows,cols = map(int, file.readline().replace('\n','').split(" "))
+            rows,cols = map(int, file.readline().replace('\n','').split())
 
             m = rows - self.option
 
-            self.tableau = [map(float, file.readline().replace('\n','').split(' ')) for _ in xrange(0, rows)]
+            self.tableau = [map(float, file.readline().replace('\n','').split()) for _ in xrange(0, rows)]
 
             # ld na primeira coluna
             for i in xrange(0, rows):
@@ -85,7 +87,7 @@ class Tableau:
                 n_ones = 0
 
                 jj = j
-                for i in xrange(self.option, rows):
+                for i in xrange(self.option - 1, rows):
 
                     if self.tableau[i][j] == 1.0:
                         n_ones += 1
@@ -95,8 +97,9 @@ class Tableau:
                     else:
                         break
 
-                if n_ones == 1 and n_zeros == m - 1:
+                if n_ones == 1 and n_zeros == m:
                     self.I.append((ii, jj))
+
 
             if len(self.I) != m:
                 raise ValueError(not_in_format_msg)
@@ -118,6 +121,9 @@ class Tableau:
                 if len(self.A) < 1 or len(self.A) > m:
                     raise ValueError(not_in_format_msg)
 
+
+                # colocando a artificial na base efetivamente
+                self.show(custom="Vai zerar os valores das variáveis artificiais de za")
 
                 artificial_in_base = [i + 2 for i in xrange(0, len(self.I)) if self.I[i] in self.A]
 
@@ -151,47 +157,32 @@ class Tableau:
 
     def remove_artificial(self):
 
-        # i = 2                                  old code
-        # while i < len(self.tableau):
-        #     if self.I[i-2] in self.A:
-        #         for j in self.J:
-        #             if j not in self.A and self.tableau[i][j] != 0.0:
-        #                 self.change_base(i, j)
-        #                 break
-        #         i = 2           # problema e se nao conseguiu tirar a variavel artificial ?
-        #     else:
-        #         i += 1
-
         for a in self.A:
-            self.J.remove(a)
+            if a in self.J:  # if not in, é porque tem variável artificial na base e o processo abaixo irá retirar
+                self.J.remove(a)
 
-        l = [index + 2 for index, i in enumerate(self.I) if i in self.A]  # se tem basica artificial
+        l = [(index + 2, i) for index, i in enumerate(self.I) if i in self.A]  # se tem basica artificial
 
-        for i in l:
+        for i, a in l:
             for j in xrange(0, len(self.J)):
                 if self.tableau[i][self.J[j]] != 0.0:
                     self.show(i, self.J[j])
                     self.change_base(i, self.J[j])
-                    self.J.remove(self.I[i - 2])  # this should keep the order !
+                    self.J.remove(a)  # this should keep the order !
                     break
 
-        self.show(custom="Vai remover as variáveis artificiais")
+        self.show(custom="Vai remover a coluna das variáveis artificiais e a linha za")
 
-        if l != []: # remover na forca pois esta tudo nulo
-            self.tableau = [self.tableau[i] for i in xrange(0, len(self.tableau)) if i not in l]
+        l = [(index + 2, i) for index, i in enumerate(self.I) if i in self.A]  # checa se ainda tem basica artificial
+
+        if l != []: # remover na forca pois esta tudo nulo !!! só pensar que vai ver que está !
+            self.tableau = [self.tableau[i] for i in xrange(0, len(self.tableau)) if i not in zip(*l)[0]]
+            for i in zip(*l)[1]:
+                self.I.remove(i)
 
         # old function truncate_tableau(self):
         self.tableau = [[row[0]] + [row[j] for j in xrange(1, len(row)) if j not in self.A] for row in self.tableau[1:]]
         self.option = 1
-
-
-    # def truncate_tableau(self):
-    #     #self.tableau = [[row[0]] + [row[j] for j in xrange(1, len(row)) if j not in self.A] for row in self.tableau[1:]]
-    #     # for a in self.A:                         old code
-    #     #     self.J.remove(a)
-    #
-    #     self.tableau = [[row[0]] + [row[j] for j in xrange(1, len(row)) if j not in self.A] for row in self.tableau[1:]]
-    #     self.option = 1
 
 
     def get_pivot(self):
@@ -230,11 +221,3 @@ class Tableau:
             if inf is True:  # -infinito
                 return True
         return False
-
-
-
-
-
-
-
-
